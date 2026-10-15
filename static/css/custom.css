@@ -1,0 +1,36 @@
+/* Custom application styles for AutoCare Analytics */
+
+body {
+    background-color: #f8fafc;
+    color: #1e293b;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+.table th {
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+}
+
+.card {
+    transition: all 0.2s ease-in-out;
+}
+
+.badge {
+    font-weight: 500;
+}
+
+.font-monospace {
+    font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
+}
+
+@media print {
+    .navbar, footer, .btn, .nav-pills, .btn-group {
+        display: none !important;
+    }
+    .card {
+        border: 1px solid #ddd !important;
+        box-shadow: none !important;
+    }
+}

@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+
+{% block title %}Breakdown Risk Prediction — AutoCare Analytics{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+    <div>
+        <h2 class="h3 fw-bold mb-1 text-dark">Vehicle Breakdown Risk Prediction</h2>
+        <p class="text-muted small mb-0">Machine learning inference engine evaluating component failure risk and maintenance urgency.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('predictions_history') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-clock-history me-1"></i> Prediction Audit History
+        </a>
+        <form method="POST" action="{{ url_for('predict_batch') }}" class="d-inline">
+            <button type="submit" class="btn btn-warning btn-sm text-dark fw-semibold">
+                <i class="bi bi-cpu-fill me-1"></i> Batch Predict All Fleet
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Left Column: Input Forms -->
+    <div class="col-lg-6">
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-white py-3 border-bottom">
+                <ul class="nav nav-pills card-header-pills small" id="predictTab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="registered-tab" data-bs-toggle="pill" data-bs-target="#registered-pane" type="button" role="tab">
+                            <i class="bi bi-car-front me-1"></i> Existing Registered Vehicle
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="custom-tab" data-bs-toggle="pill" data-bs-target="#custom-pane" type="button" role="tab">
+                            <i class="bi bi-sliders me-1"></i> Custom Feature Simulator
+                        </button>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body p-4">
+                <div class="tab-content" id="predictTabContent">
+                    <!-- Option 1: Existing vehicle -->
+                    <div class="tab-pane fade show active" id="registered-pane" role="tabpanel">
+                        <form method="POST" action="{{ url_for('predict') }}">
+                            <input type="hidden" name="prediction_mode" value="existing_vehicle">
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Select Registered Vehicle <span class="text-danger">*</span></label>
+                                <select name="vehicle_id" class="form-select" required>
+                                    <option value="">Choose a vehicle...</option>
+                                    {% for v in vehicles %}
+                                    <option value="{{ v.vehicle_id }}">
+                                        {{ v.registration_no }} — {{ v.make }} {{ v.model }} ({{ v.year }}, {{ "{:,}".format(v.mileage) }} km)
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text small">Automatically extracts age, mileage, service interval, and historical breakdown records.</div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100 py-2">
+                                <i class="bi bi-lightning-charge-fill me-1"></i> Run Risk Prediction & Save
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Option 2: Custom parameter simulator -->
+                    <div class="tab-pane fade" id="custom-pane" role="tabpanel">
+                        <form method="POST" action="{{ url_for('predict') }}">
+                            <input type="hidden" name="prediction_mode" value="manual">
+
+                            <div class="row g-2 mb-2">
+                                <div class="col-6">
+                                    <label class="form-label small fw-semibold">Vehicle Age (Years)</label>
+                                    <input type="number" step="0.5" name="vehicle_age_years" class="form-control form-control-sm" value="7" min="1" max="25" required>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small fw-semibold">Mileage (km)</label>
+                                    <input type="number" name="mileage_km" class="form-control form-control-sm" value="95000" min="0" required>
+                                </div>
+                            </div>
+
+                            <div class="row g-2 mb-2">
+                                <div class="col-6">
+                                    <label class="form-label small fw-semibold">Days Since Last Service</label>
+                                    <input type="number" name="days_since_last_service" class="form-control form-control-sm" value="220" min="0" required>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small fw-semibold">Service Freq (per year)</label>
+                                    <input type="number" step="0.1" name="service_frequency_per_year" class="form-control form-control-sm" value="1.2" min="0.1" required>
+                                </div>
+                            </div>
+
+                            <div class="row g-2 mb-2">
+                                <div class="col-6">
+                                    <label class="form-label small fw-semibold">Avg Service Cost ($)</label>
+                                    <input type="number" step="1" name="avg_service_cost" class="form-control form-control-sm" value="280" min="0" required>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small fw-semibold">Fuel Type</label>
+                                    <select name="fuel_type" class="form-select form-select-sm">
+                                        <option value="Petrol">Petrol</option>
+                                        <option value="Diesel" selected>Diesel</option>
+                                        <option value="Hybrid">Hybrid</option>
+                                        <option value="Electric">Electric</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <label class="form-label small fw-semibold">Major Repairs Count</label>
+                                    <input type="number" name="major_repairs_count" class="form-control form-control-sm" value="2" min="0" required>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small fw-semibold">Breakdown Incidents</label>
+                                    <input type="number" name="breakdown_history_count" class="form-control form-control-sm" value="1" min="0" required>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-warning w-100 py-2 fw-semibold text-dark">
+                                <i class="bi bi-cpu me-1"></i> Simulate Custom Risk
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Result Card -->
+    <div class="col-lg-6">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-speedometer2 text-danger me-2"></i>Prediction Output & Diagnostics</h6>
+            </div>
+            <div class="card-body p-4 d-flex flex-column justify-content-center">
+                {% if result %}
+                <div class="text-center mb-4">
+                    <span class="text-muted small d-block mb-1">Target Profile:</span>
+                    <h5 class="fw-bold text-dark">{{ result.vehicle_info }}</h5>
+
+                    <div class="my-3">
+                        {% if result.risk_level == 'High' %}
+                            <span class="badge badge-risk-high fs-4 px-4 py-2"><i class="bi bi-exclamation-triangle-fill me-2"></i>HIGH BREAKDOWN RISK</span>
+                        {% elif result.risk_level == 'Medium' %}
+                            <span class="badge badge-risk-medium fs-4 px-4 py-2"><i class="bi bi-exclamation-circle-fill me-2"></i>MODERATE RISK</span>
+                        {% else %}
+                            <span class="badge badge-risk-low fs-4 px-4 py-2"><i class="bi bi-shield-check me-2"></i>LOW RISK (OPTIMAL)</span>
+                        {% endif %}
+                    </div>
+
+                    <h1 class="display-4 fw-bold {% if result.risk_level == 'High' %}text-danger{% elif result.risk_level == 'Medium' %}text-warning{% else %}text-success{% endif %} mb-0">
+                        {{ result.risk_percentage }}%
+                    </h1>
+                    <small class="text-muted">Calculated Breakdown Probability</small>
+                </div>
+
+                <div class="row g-2 mb-3 text-center">
+                    <div class="col-6">
+                        <div class="p-3 bg-light rounded border">
+                            <span class="text-muted small d-block">Breakdown Likely</span>
+                            <span class="fw-bold fs-6 {% if result.breakdown_predicted %}text-danger{% else %}text-success{% endif %}">
+                                {% if result.breakdown_predicted %}<i class="bi bi-x-circle me-1"></i>YES{% else %}<i class="bi bi-check-circle me-1"></i>NO{% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-3 bg-light rounded border">
+                            <span class="text-muted small d-block">Service Due</span>
+                            <span class="fw-bold fs-6 {% if result.service_due %}text-danger{% else %}text-success{% endif %}">
+                                {% if result.service_due %}<i class="bi bi-bell-fill me-1"></i>URGENT / OVERDUE{% else %}<i class="bi bi-calendar-check me-1"></i>ON SCHEDULE{% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-2">
+                    <h6 class="fw-semibold small text-secondary mb-2">Key Diagnostic Driving Factors:</h6>
+                    <ul class="list-group list-group-flush small border rounded">
+                        {% for f in result.factors_list %}
+                        <li class="list-group-item bg-light text-dark">
+                            <i class="bi bi-arrow-right-circle text-primary me-2"></i>{{ f }}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% else %}
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-cpu fs-1 text-secondary d-block mb-3"></i>
+                    <h5 class="fw-bold text-dark">No Active Prediction Calculated</h5>
+                    <p class="small text-muted mb-0">Select an existing registered vehicle or enter custom operational parameters on the left and submit.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

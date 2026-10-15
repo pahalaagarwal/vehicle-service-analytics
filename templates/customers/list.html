@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Customers — AutoCare Analytics{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="h3 fw-bold mb-1 text-dark">Customer Directory</h2>
+        <p class="text-muted small mb-0">Manage customer contact information, vehicle ownership, and service history.</p>
+    </div>
+    <a href="{{ url_for('customer_add') }}" class="btn btn-primary btn-sm">
+        <i class="bi bi-person-plus me-1"></i> Add Customer
+    </a>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+        <div class="input-group" style="max-width: 300px;">
+            <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+            <input type="text" id="customerSearch" class="form-control form-control-sm" placeholder="Search customers..." onkeyup="filterTable()">
+        </div>
+        <span class="text-muted small">{{ customers|length }} registered customers</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0" id="customersTable">
+            <thead class="table-light small">
+                <tr>
+                    <th>ID</th>
+                    <th>Customer Name</th>
+                    <th>Phone</th>
+                    <th>Email</th>
+                    <th>Vehicles Owned</th>
+                    <th>Registered Date</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in customers %}
+                <tr>
+                    <td class="text-muted small">#{{ c.customer_id }}</td>
+                    <td>
+                        <a href="{{ url_for('customer_view', customer_id=c.customer_id) }}" class="fw-semibold text-dark text-decoration-none">
+                            <i class="bi bi-person-circle text-primary me-2"></i>{{ c.name }}
+                        </a>
+                    </td>
+                    <td>{{ c.phone }}</td>
+                    <td>{{ c.email }}</td>
+                    <td>
+                        <span class="badge bg-light text-dark border px-2 py-1">
+                            <i class="bi bi-car-front me-1"></i>{{ c.vehicle_count }} vehicles
+                        </span>
+                    </td>
+                    <td class="small text-muted">{{ c.created_at[:10] if c.created_at else '—' }}</td>
+                    <td class="text-end">
+                        <div class="btn-group btn-group-sm">
+                            <a href="{{ url_for('customer_view', customer_id=c.customer_id) }}" class="btn btn-outline-secondary" title="View Profile">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a href="{{ url_for('customer_edit', customer_id=c.customer_id) }}" class="btn btn-outline-primary" title="Edit Customer">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            {% if current_user and current_user.role == 'admin' %}
+                            <form method="POST" action="{{ url_for('customer_delete', customer_id=c.customer_id) }}" class="d-inline" onsubmit="return confirm('Delete customer and all linked vehicles/services?');">
+                                <button type="submit" class="btn btn-outline-danger" title="Delete">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center py-4 text-muted">No customers found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function filterTable() {
+    let input = document.getElementById("customerSearch").value.toUpperCase();
+    let trs = document.getElementById("customersTable").getElementsByTagName("tr");
+    for (let i = 1; i < trs.length; i++) {
+        let text = trs[i].textContent || trs[i].innerText;
+        trs[i].style.display = text.toUpperCase().indexOf(input) > -1 ? "" : "none";
+    }
+}
+</script>
+{% endblock %}

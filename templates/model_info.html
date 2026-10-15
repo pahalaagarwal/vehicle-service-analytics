@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+
+{% block title %}Machine Learning Architecture & Viva Guide — AutoCare Analytics{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="h3 fw-bold mb-1 text-dark">Machine Learning Architecture & Viva Demonstration Guide</h2>
+        <p class="text-muted small mb-0">Academic documentation, model evaluation metrics, feature importances, and viva examination talking points.</p>
+    </div>
+    <div>
+        <button onclick="window.print()" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-printer me-1"></i> Print / Export Guide
+        </button>
+    </div>
+</div>
+
+<!-- Evaluation Metrics & Candidate Model Comparison -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-trophy text-warning me-2"></i>Candidate Model Evaluation Comparison</h6>
+                <span class="badge bg-success-subtle text-success border">Selected: {{ metrics.best_model if metrics else 'Trained Pipeline' }}</span>
+            </div>
+            <div class="card-body">
+                <p class="small text-muted mb-3">
+                    Two candidate supervised learning models were evaluated on an 80/20 train-test stratified split ({{ metrics.test_set_size if metrics else '240' }} test vehicles):
+                </p>
+
+                {% if metrics and metrics.comparison %}
+                <div class="table-responsive">
+                    <table class="table table-bordered table-sm align-middle small mb-3">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Evaluation Metric</th>
+                                <th class="text-center">Logistic Regression</th>
+                                <th class="text-center">Random Forest</th>
+                                <th class="text-center">Difference</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="fw-semibold">Accuracy</td>
+                                <td class="text-center">{{ (metrics.comparison.logistic_regression.accuracy * 100)|round(2) }}%</td>
+                                <td class="text-center">{{ (metrics.comparison.random_forest.accuracy * 100)|round(2) }}%</td>
+                                <td class="text-center text-muted">{{ ((metrics.comparison.logistic_regression.accuracy - metrics.comparison.random_forest.accuracy)*100)|round(2) }}%</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-semibold">Precision</td>
+                                <td class="text-center">{{ (metrics.comparison.logistic_regression.precision * 100)|round(2) }}%</td>
+                                <td class="text-center">{{ (metrics.comparison.random_forest.precision * 100)|round(2) }}%</td>
+                                <td class="text-center text-muted">{{ ((metrics.comparison.logistic_regression.precision - metrics.comparison.random_forest.precision)*100)|round(2) }}%</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-semibold">Recall (Sensitivity)</td>
+                                <td class="text-center">{{ (metrics.comparison.logistic_regression.recall * 100)|round(2) }}%</td>
+                                <td class="text-center">{{ (metrics.comparison.random_forest.recall * 100)|round(2) }}%</td>
+                                <td class="text-center text-muted">{{ ((metrics.comparison.logistic_regression.recall - metrics.comparison.random_forest.recall)*100)|round(2) }}%</td>
+                            </tr>
+                            <tr class="table-primary-subtle">
+                                <td class="fw-bold">F1-Score (Harmonic Mean)</td>
+                                <td class="text-center fw-bold">{{ metrics.comparison.logistic_regression.f1_score }}</td>
+                                <td class="text-center fw-bold">{{ metrics.comparison.random_forest.f1_score }}</td>
+                                <td class="text-center fw-bold text-success">+{{ ((metrics.comparison.logistic_regression.f1_score - metrics.comparison.random_forest.f1_score))|round(4) }}</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-semibold">ROC-AUC Score</td>
+                                <td class="text-center">{{ metrics.comparison.logistic_regression.roc_auc }}</td>
+                                <td class="text-center">{{ metrics.comparison.random_forest.roc_auc }}</td>
+                                <td class="text-center text-muted">{{ ((metrics.comparison.logistic_regression.roc_auc - metrics.comparison.random_forest.roc_auc))|round(4) }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
+
+                <div class="p-3 bg-light rounded border small">
+                    <strong>Why Recall & F1-Score matter most:</strong> In vehicle safety and roadside breakdown prediction, a <em>False Negative</em> (failing to predict a breakdown) can leave a driver stranded or cause engine failure. Hence, model selection prioritizes high recall and balanced F1-score over raw accuracy alone.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feature Importances -->
+    <div class="col-lg-6">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-bar-chart-steps text-primary me-2"></i>Key Feature Relative Importances</h6>
+            </div>
+            <div class="card-body">
+                <p class="small text-muted mb-3">Feature weights identifying the primary drivers of vehicular breakdown risk:</p>
+                {% if metrics and metrics.feature_importance %}
+                    {% for feat, imp in metrics.feature_importance.items() %}
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span class="fw-semibold font-monospace">{{ feat }}</span>
+                            <span class="text-muted">{{ (imp * 100)|round(1) }}%</span>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-primary" role="progressbar" style="width: {{ (imp * 100)|round(1) }}%"></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Evaluation Charts Image -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white py-3 border-bottom">
+        <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-image text-info me-2"></i>Generated Model Evaluation Curves & Confusion Matrix</h6>
+    </div>
+    <div class="card-body text-center p-4">
+        <img src="{{ url_for('static', filename='img/model_evaluation.png') }}" class="img-fluid rounded border shadow-sm" alt="Model Evaluation Plot" style="max-height: 400px;">
+    </div>
+</div>
+
+<!-- Comprehensive Viva / Demonstration Guide -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-dark text-white py-3">
+        <h5 class="fw-bold mb-0"><i class="bi bi-mortarboard-fill text-warning me-2"></i>Academic Viva Voce & Project Demonstration Checklist</h5>
+    </div>
+    <div class="card-body p-4">
+        <div class="accordion" id="vivaAccordion">
+            <!-- Point 1 -->
+            <div class="accordion-item mb-2 border rounded">
+                <h2 class="accordion-header" id="vivaHead1">
+                    <button class="accordion-button fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#viva1" aria-expanded="true">
+                        1. Problem Statement & Why a Web-Based Solution is Needed
+                    </button>
+                </h2>
+                <div id="viva1" class="accordion-collapse collapse show" data-bs-parent="#vivaAccordion">
+                    <div class="accordion-body small text-secondary">
+                        Traditional vehicle workshops rely on reactive maintenance (repairing vehicles after failure occurs) and paper/spreadsheet records, resulting in unexpected customer breakdowns and inefficient parts inventory. This web solution centralizes fleet records, calculates maintenance intervals in real time, and uses supervised machine learning to classify breakdown risk proactively before failures occur on the road.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Point 2 -->
+            <div class="accordion-item mb-2 border rounded">
+                <h2 class="accordion-header" id="vivaHead2">
+                    <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#viva2">
+                        2. Normalized Relational Database Design & Keys
+                    </button>
+                </h2>
+                <div id="viva2" class="accordion-collapse collapse" data-bs-parent="#vivaAccordion">
+                    <div class="accordion-body small text-secondary">
+                        The database schema follows 3rd Normal Form (3NF) to eliminate data redundancy:
+                        <ul class="mt-2 mb-0">
+                            <li><code>users</code> (user_id PK): Manages role-based accounts (Admin, Advisor, Customer) with hashed passwords.</li>
+                            <li><code>customers</code> (customer_id PK): Master table storing customer contact details.</li>
+                            <li><code>vehicles</code> (vehicle_id PK, customer_id FK): Tracks vehicle specifications linked to its owner with a UNIQUE registration number.</li>
+                            <li><code>services</code> (service_id PK, vehicle_id FK): Transaction table recording service date, mileage, labour costs, and status.</li>
+                            <li><code>parts</code> (part_id PK, service_id FK): Child table tracking individual parts replaced per service ticket.</li>
+                            <li><code>predictions</code> (prediction_id PK, vehicle_id FK): Audit table storing ML inference outputs (risk scores, failure flags, timestamps).</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Point 3 -->
+            <div class="accordion-item mb-2 border rounded">
+                <h2 class="accordion-header" id="vivaHead3">
+                    <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#viva3">
+                        3. How Flask Connects Frontend, Backend Logic & Database
+                    </button>
+                </h2>
+                <div id="viva3" class="accordion-collapse collapse" data-bs-parent="#vivaAccordion">
+                    <div class="accordion-body small text-secondary">
+                        The architecture separates concerns into a layered model:
+                        <ul class="mt-2 mb-0">
+                            <li><strong>Presentation:</strong> Jinja2 templates render dynamic HTML enriched with Bootstrap 5 and Chart.js for data visualizations.</li>
+                            <li><strong>Routing & Security:</strong> Flask routes handle HTTP GET/POST verbs, validate input, manage user sessions, and apply <code>@login_required</code> and <code>@role_required</code> decorators.</li>
+                            <li><strong>Business & Service Layer:</strong> Dedicated service modules (<code>services/</code>) handle SQL queries using parameterized statements to prevent SQL injection.</li>
+                            <li><strong>Machine Learning Layer:</strong> Trained Scikit-learn pipelines (preprocessor + model) are serialized via <code>joblib</code> and loaded into memory for real-time inference.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Point 4 -->
+            <div class="accordion-item mb-2 border rounded">
+                <h2 class="accordion-header" id="vivaHead4">
+                    <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#viva4">
+                        4. Machine Learning Algorithm Selection & Justification
+                    </button>
+                </h2>
+                <div id="viva4" class="accordion-collapse collapse" data-bs-parent="#vivaAccordion">
+                    <div class="accordion-body small text-secondary">
+                        We compared <strong>Logistic Regression</strong> and <strong>Random Forest Classifier</strong>:
+                        <ul class="mt-2 mb-0">
+                            <li><strong>Logistic Regression:</strong> Provides calibrated probabilistic outputs (0.0 to 1.0) and high interpretability for linear trends in mileage and service delays.</li>
+                            <li><strong>Random Forest:</strong> An ensemble of decision trees capturing non-linear interactions (e.g. older diesel vehicles with high mileage having disproportionately higher alternator/clutch failure rates).</li>
+                            <li>The model with the superior F1-Score and ROC-AUC is automatically selected to prevent biased classifications.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Point 5 -->
+            <div class="accordion-item mb-2 border rounded">
+                <h2 class="accordion-header" id="vivaHead5">
+                    <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#viva5">
+                        5. Limitations, Ethical Considerations & Future Improvements
+                    </button>
+                </h2>
+                <div id="viva5" class="accordion-collapse collapse" data-bs-parent="#vivaAccordion">
+                    <div class="accordion-body small text-secondary">
+                        <ul class="mt-2 mb-0">
+                            <li><strong>Limitations:</strong> Currently relies on periodic workshop visits for odometer updates rather than live real-time telemetry.</li>
+                            <li><strong>Ethical Considerations:</strong> Customer privacy and vehicle usage data protection; preventing arbitrary price inflation based on algorithmic risk scores.</li>
+                            <li><strong>Future Scope:</strong> Integration with OBD-II IoT dongles (CAN-bus data) for continuous fault code (DTC) streaming, deep learning recurrent networks (LSTM) for remaining useful life (RUL) estimation, and SMS/WhatsApp automated service reminder integrations.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

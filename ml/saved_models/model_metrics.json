@@ -1,0 +1,64 @@
+{
+    "best_model": "Logistic Regression",
+    "features": [
+        "vehicle_age_years",
+        "mileage_km",
+        "days_since_last_service",
+        "service_frequency_per_year",
+        "avg_service_cost",
+        "major_repairs_count",
+        "breakdown_history_count",
+        "fuel_type"
+    ],
+    "comparison": {
+        "logistic_regression": {
+            "model_name": "Logistic Regression",
+            "accuracy": 0.9417,
+            "precision": 0.9735,
+            "recall": 0.9363,
+            "f1_score": 0.9545,
+            "roc_auc": 0.9862,
+            "confusion_matrix": [
+                [
+                    79,
+                    4
+                ],
+                [
+                    10,
+                    147
+                ]
+            ]
+        },
+        "random_forest": {
+            "model_name": "Random Forest Classifier",
+            "accuracy": 0.9125,
+            "precision": 0.9304,
+            "recall": 0.9363,
+            "f1_score": 0.9333,
+            "roc_auc": 0.965,
+            "confusion_matrix": [
+                [
+                    72,
+                    11
+                ],
+                [
+                    10,
+                    147
+                ]
+            ]
+        }
+    },
+    "feature_importance": {
+        "vehicle_age_years": 0.2158,
+        "mileage_km": 0.2598,
+        "days_since_last_service": 0.1232,
+        "service_frequency_per_year": 0.0454,
+        "avg_service_cost": 0.2657,
+        "major_repairs_count": 0.0458,
+        "breakdown_history_count": 0.0276,
+        "fuel_type_Electric": 0.0032,
+        "fuel_type_Hybrid": 0.0052,
+        "fuel_type_Petrol": 0.0084
+    },
+    "test_set_size": 240
+}

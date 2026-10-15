@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Services & Parts Tracking — AutoCare Analytics{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="h3 fw-bold mb-1 text-dark">Services & Parts Log</h2>
+        <p class="text-muted small mb-0">Track maintenance events, odometer logs, labour charges, and replacement parts expenditure.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('export_services_csv') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-download me-1"></i> Export CSV
+        </a>
+        <a href="{{ url_for('service_add') }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-calendar-plus me-1"></i> Log Service Ticket
+        </a>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+        <div class="input-group" style="max-width: 320px;">
+            <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+            <input type="text" id="serviceSearch" class="form-control form-control-sm" placeholder="Search service, vehicle, customer..." onkeyup="filterTable()">
+        </div>
+        <span class="text-muted small">{{ services|length }} service tickets</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0" id="servicesTable">
+            <thead class="table-light small">
+                <tr>
+                    <th>Ticket ID</th>
+                    <th>Date</th>
+                    <th>Vehicle</th>
+                    <th>Customer</th>
+                    <th>Service Type</th>
+                    <th>Odometer</th>
+                    <th>Labour Cost</th>
+                    <th>Parts Cost</th>
+                    <th>Total Cost</th>
+                    <th>Status</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in services %}
+                <tr>
+                    <td class="small text-muted font-monospace">#{{ s.service_id }}</td>
+                    <td class="fw-semibold text-dark">{{ s.service_date }}</td>
+                    <td>
+                        <a href="{{ url_for('vehicle_view', vehicle_id=s.vehicle_id) }}" class="fw-bold text-decoration-none font-monospace">
+                            {{ s.registration_no }}
+                        </a>
+                        <div class="small text-muted">{{ s.make }} {{ s.model }}</div>
+                    </td>
+                    <td>{{ s.customer_name }}</td>
+                    <td>
+                        <span class="badge {% if s.service_type == 'Routine' %}bg-primary-subtle text-primary border{% elif s.service_type == 'Emergency Breakdown' %}bg-danger-subtle text-danger border{% elif s.service_type == 'Major Repair' %}bg-warning-subtle text-dark border{% else %}bg-light text-dark border{% endif %}">
+                            {{ s.service_type }}
+                        </span>
+                    </td>
+                    <td>{{ "{:,}".format(s.mileage) }} km</td>
+                    <td>${{ "{:,.2f}".format(s.labour_cost) }}</td>
+                    <td>${{ "{:,.2f}".format(s.parts_cost) }}</td>
+                    <td class="fw-bold text-success">${{ "{:,.2f}".format(s.total_cost) }}</td>
+                    <td>
+                        <span class="badge {% if s.status == 'Completed' %}bg-success{% elif s.status == 'Scheduled' %}bg-info{% elif s.status == 'In Progress' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                            {{ s.status }}
+                        </span>
+                    </td>
+                    <td class="text-end">
+                        <div class="btn-group btn-group-sm">
+                            <a href="{{ url_for('service_view', service_id=s.service_id) }}" class="btn btn-outline-secondary" title="View Ticket & Parts">
+                                <i class="bi bi-ticket-detailed"></i>
+                            </a>
+                            {% if current_user and current_user.role == 'admin' %}
+                            <form method="POST" action="{{ url_for('service_delete', service_id=s.service_id) }}" class="d-inline" onsubmit="return confirm('Delete service ticket?');">
+                                <button type="submit" class="btn btn-outline-danger" title="Delete">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="11" class="text-center py-4 text-muted">No service tickets recorded yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function filterTable() {
+    let input = document.getElementById("serviceSearch").value.toUpperCase();
+    let trs = document.getElementById("servicesTable").getElementsByTagName("tr");
+    for (let i = 1; i < trs.length; i++) {
+        let text = trs[i].textContent || trs[i].innerText;
+        trs[i].style.display = text.toUpperCase().indexOf(input) > -1 ? "" : "none";
+    }
+}
+</script>
+{% endblock %}

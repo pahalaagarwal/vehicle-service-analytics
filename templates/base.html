@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}AutoCare Analytics & Risk Predictor{% endblock %}</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #1e3a8a;
+            --secondary-color: #0d9488;
+            --accent-color: #f59e0b;
+            --bg-light: #f8fafc;
+        }
+        body {
+            background-color: var(--bg-light);
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .navbar-brand {
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        .card {
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: 0.75rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+        }
+        .kpi-card {
+            border-left: 4px solid var(--primary-color);
+        }
+        .badge-risk-high {
+            background-color: #fee2e2;
+            color: #b91c1c;
+            border: 1px solid #f87171;
+        }
+        .badge-risk-medium {
+            background-color: #fef3c7;
+            color: #b45309;
+            border: 1px solid #fcd34d;
+        }
+        .badge-risk-low {
+            background-color: #dcfce7;
+            color: #15803d;
+            border: 1px solid #86efac;
+        }
+        .nav-link.active {
+            font-weight: 600;
+            color: #ffffff !important;
+            background-color: rgba(255, 255, 255, 0.15);
+            border-radius: 0.5rem;
+        }
+        footer {
+            margin-top: auto;
+            background-color: #ffffff;
+            border-top: 1px solid #e2e8f0;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+    <!-- Navigation Header -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark py-2 shadow-sm" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand d-flex align-items-center gap-2" href="{{ url_for('dashboard') if current_user else url_for('login') }}">
+                <i class="bi bi-gear-wide-connected text-warning fs-4"></i>
+                <span>AutoCare <span class="badge bg-primary text-light fs-6">AI Analytics</span></span>
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarMain">
+                {% if current_user %}
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0 gap-1">
+                    <li class="nav-item">
+                        <a class="nav-link px-3 {{ 'active' if request.endpoint == 'dashboard' }}" href="{{ url_for('dashboard') }}">
+                            <i class="bi bi-speedometer2 me-1"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link px-3 {{ 'active' if 'customer' in request.endpoint }}" href="{{ url_for('customers_list') }}">
+                            <i class="bi bi-people me-1"></i> Customers
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link px-3 {{ 'active' if 'vehicle' in request.endpoint }}" href="{{ url_for('vehicles_list') }}">
+                            <i class="bi bi-car-front me-1"></i> Vehicles
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link px-3 {{ 'active' if 'service' in request.endpoint and 'analytics' not in request.endpoint }}" href="{{ url_for('services_list') }}">
+                            <i class="bi bi-tools me-1"></i> Services & Parts
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link px-3 {{ 'active' if request.endpoint == 'analytics' }}" href="{{ url_for('analytics') }}">
+                            <i class="bi bi-bar-chart-line me-1"></i> Analytics
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link px-3 {{ 'active' if 'predict' in request.endpoint }}" href="{{ url_for('predict') }}">
+                            <i class="bi bi-cpu me-1 text-warning"></i> Risk Prediction
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link px-3 {{ 'active' if request.endpoint == 'reports' }}" href="{{ url_for('reports') }}">
+                            <i class="bi bi-file-earmark-text me-1"></i> Reports
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link px-3 {{ 'active' if request.endpoint == 'model_info' }}" href="{{ url_for('model_info') }}">
+                            <i class="bi bi-mortarboard me-1 text-info"></i> ML Viva / Docs
+                        </a>
+                    </li>
+                </ul>
+
+                <div class="d-flex align-items-center gap-3">
+                    <span class="badge rounded-pill bg-secondary text-light px-3 py-2">
+                        <i class="bi bi-person-circle me-1"></i> {{ current_user.username }} ({{ current_user.role|replace('_', ' ')|title }})
+                    </span>
+                    <a href="{{ url_for('logout') }}" class="btn btn-outline-light btn-sm px-3">
+                        <i class="bi bi-box-arrow-right me-1"></i> Logout
+                    </a>
+                </div>
+                {% else %}
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0 gap-2">
+                    <li class="nav-item">
+                        <a class="nav-link {{ 'active' if request.endpoint == 'login' }}" href="{{ url_for('login') }}">Login</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="btn btn-primary btn-sm px-3 mt-1" href="{{ url_for('register') }}">Register</a>
+                    </li>
+                </ul>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <main class="container-fluid px-4 py-4 flex-grow-1">
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="row">
+                    <div class="col-12">
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible fade show shadow-sm" role="alert">
+                                {% if category == 'success' %}<i class="bi bi-check-circle-fill me-2"></i>
+                                {% elif category == 'danger' %}<i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                {% elif category == 'warning' %}<i class="bi bi-exclamation-circle-fill me-2"></i>
+                                {% else %}<i class="bi bi-info-circle-fill me-2"></i>{% endif %}
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="py-3 text-center text-muted small">
+        <div class="container-fluid px-4">
+            <div class="row align-items-center">
+                <div class="col-md-6 text-md-start">
+                    <strong>AutoCare Analytics</strong> — Vehicle Service Management & Breakdown Risk Prediction
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <span>Python Flask &bull; SQLite &bull; Scikit-learn &bull; Bootstrap 5</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

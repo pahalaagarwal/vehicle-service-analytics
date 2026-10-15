@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}{{ action }} Vehicle — AutoCare Analytics{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-7">
+        <div class="d-flex align-items-center mb-3">
+            <a href="{{ url_for('vehicles_list') }}" class="btn btn-outline-secondary btn-sm me-3">
+                <i class="bi bi-arrow-left"></i> Back
+            </a>
+            <h3 class="fw-bold mb-0">{{ action }} Vehicle</h3>
+        </div>
+
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
+                <form method="POST">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Owner / Customer <span class="text-danger">*</span></label>
+                            {% if action == 'Add' %}
+                            <select name="customer_id" class="form-select" required>
+                                <option value="">Select Customer...</option>
+                                {% for c in customers %}
+                                <option value="{{ c.customer_id }}" {% if request.args.get('customer_id')|int == c.customer_id %}selected{% endif %}>
+                                    {{ c.name }} ({{ c.phone }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                            {% else %}
+                            <input type="text" class="form-control bg-light" value="{{ vehicle.customer_name }}" disabled>
+                            <input type="hidden" name="customer_id" value="{{ vehicle.customer_id }}">
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Registration Number <span class="text-danger">*</span></label>
+                            <input type="text" name="registration_no" class="form-control text-uppercase font-monospace" placeholder="e.g. KA-01-AB-1234" value="{{ vehicle.registration_no or '' }}" required>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Vehicle Make (Manufacturer) <span class="text-danger">*</span></label>
+                            <input type="text" name="make" class="form-control" placeholder="Toyota, Honda, Ford..." value="{{ vehicle.make or '' }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Model <span class="text-danger">*</span></label>
+                            <input type="text" name="model" class="form-control" placeholder="Corolla, Civic, EcoSport..." value="{{ vehicle.model or '' }}" required>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small">Manufacturing Year <span class="text-danger">*</span></label>
+                            <input type="number" name="year" class="form-control" min="1995" max="2026" value="{{ vehicle.year or 2019 }}" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small">Current Odometer (km) <span class="text-danger">*</span></label>
+                            <input type="number" name="mileage" class="form-control" min="0" value="{{ vehicle.mileage or 50000 }}" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small">Fuel Type</label>
+                            <select name="fuel_type" class="form-select">
+                                <option value="Petrol" {% if vehicle.fuel_type == 'Petrol' %}selected{% endif %}>Petrol</option>
+                                <option value="Diesel" {% if vehicle.fuel_type == 'Diesel' %}selected{% endif %}>Diesel</option>
+                                <option value="Hybrid" {% if vehicle.fuel_type == 'Hybrid' %}selected{% endif %}>Hybrid</option>
+                                <option value="Electric" {% if vehicle.fuel_type == 'Electric' %}selected{% endif %}>Electric</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold small">Last Known Service Date</label>
+                        <input type="date" name="last_service_date" class="form-control" value="{{ vehicle.last_service_date or '' }}">
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{{ url_for('vehicles_list') }}" class="btn btn-light">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="bi bi-check2 me-1"></i> Save Vehicle Record
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

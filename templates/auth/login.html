@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}Sign In — AutoCare Analytics{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center align-items-center" style="min-height: 75vh;">
+    <div class="col-md-5 col-lg-4">
+        <div class="card shadow-lg border-0 rounded-4">
+            <div class="card-body p-4 p-md-5">
+                <div class="text-center mb-4">
+                    <div class="d-inline-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary rounded-circle mb-3" style="width: 64px; height: 64px;">
+                        <i class="bi bi-shield-lock fs-2"></i>
+                    </div>
+                    <h3 class="fw-bold text-dark">Welcome Back</h3>
+                    <p class="text-muted small">Sign in to your AutoCare service portal</p>
+                </div>
+
+                <form method="POST" action="{{ url_for('login') }}">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Username</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-person"></i></span>
+                            <input type="text" name="username" id="username" class="form-control" placeholder="Enter username" required autofocus>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label small fw-semibold">Password</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-key"></i></span>
+                            <input type="password" name="password" id="password" class="form-control" placeholder="Enter password" required>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold rounded-3 mb-3">
+                        <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
+                    </button>
+                </form>
+
+                <!-- Demo quick fill buttons for viva/evaluation -->
+                <div class="p-3 bg-light rounded-3 mt-3 border">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="fw-bold small text-secondary"><i class="bi bi-lightning-charge-fill text-warning me-1"></i>Quick Demo Logins:</span>
+                    </div>
+                    <div class="d-flex flex-wrap gap-1">
+                        <button type="button" class="btn btn-outline-secondary btn-sm py-1 px-2 small flex-fill" onclick="fillCredentials('admin', 'admin123')">
+                            Admin
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm py-1 px-2 small flex-fill" onclick="fillCredentials('advisor', 'advisor123')">
+                            Advisor
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm py-1 px-2 small flex-fill" onclick="fillCredentials('john_doe', 'customer123')">
+                            Customer
+                        </button>
+                    </div>
+                </div>
+
+                <div class="text-center mt-4">
+                    <span class="text-muted small">Don't have an account?</span>
+                    <a href="{{ url_for('register') }}" class="small fw-semibold text-decoration-none ms-1">Register now</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function fillCredentials(u, p) {
+    document.getElementById('username').value = u;
+    document.getElementById('password').value = p;
+}
+</script>
+{% endblock %}

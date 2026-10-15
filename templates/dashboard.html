@@ -1,0 +1,322 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard — AutoCare Analytics{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+    <div>
+        <h2 class="h3 fw-bold mb-1 text-dark">Service & Analytics Overview</h2>
+        <p class="text-muted small mb-0">Real-time workshop KPIs, service volume trends, and predictive breakdown alerts.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('vehicle_add') }}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-plus-circle me-1"></i> New Vehicle
+        </a>
+        <a href="{{ url_for('service_add') }}" class="btn btn-outline-success btn-sm">
+            <i class="bi bi-calendar-plus me-1"></i> Book Service
+        </a>
+        <form method="POST" action="{{ url_for('predict_batch') }}" class="d-inline">
+            <button type="submit" class="btn btn-warning btn-sm text-dark fw-semibold">
+                <i class="bi bi-cpu-fill me-1"></i> Batch Predict Fleet
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- KPI Cards Grid -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-2">
+        <div class="card h-100 border-start border-4 border-primary">
+            <div class="card-body p-3">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-muted small fw-semibold text-uppercase">Vehicles</span>
+                    <span class="p-2 bg-primary bg-opacity-10 text-primary rounded-circle"><i class="bi bi-car-front fs-5"></i></span>
+                </div>
+                <h3 class="fw-bold mb-0 text-dark">{{ kpis.total_vehicles }}</h3>
+                <small class="text-muted">Registered fleet</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-2">
+        <div class="card h-100 border-start border-4 border-info">
+            <div class="card-body p-3">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-muted small fw-semibold text-uppercase">Customers</span>
+                    <span class="p-2 bg-info bg-opacity-10 text-info rounded-circle"><i class="bi bi-people fs-5"></i></span>
+                </div>
+                <h3 class="fw-bold mb-0 text-dark">{{ kpis.total_customers }}</h3>
+                <small class="text-muted">Active accounts</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-2">
+        <div class="card h-100 border-start border-4 border-success">
+            <div class="card-body p-3">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-muted small fw-semibold text-uppercase">Services</span>
+                    <span class="p-2 bg-success bg-opacity-10 text-success rounded-circle"><i class="bi bi-tools fs-5"></i></span>
+                </div>
+                <h3 class="fw-bold mb-0 text-dark">{{ kpis.total_services }}</h3>
+                <small class="text-muted">Completed & logged</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-2">
+        <div class="card h-100 border-start border-4 border-secondary">
+            <div class="card-body p-3">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-muted small fw-semibold text-uppercase">Revenue</span>
+                    <span class="p-2 bg-secondary bg-opacity-10 text-secondary rounded-circle"><i class="bi bi-cash-stack fs-5"></i></span>
+                </div>
+                <h3 class="fw-bold mb-0 text-dark">${{ "{:,.2f}".format(kpis.total_revenue) }}</h3>
+                <small class="text-muted">Labour + Parts</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-2">
+        <div class="card h-100 border-start border-4 border-danger">
+            <div class="card-body p-3">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-muted small fw-semibold text-uppercase">High Risk</span>
+                    <span class="p-2 bg-danger bg-opacity-10 text-danger rounded-circle"><i class="bi bi-exclamation-triangle-fill fs-5"></i></span>
+                </div>
+                <h3 class="fw-bold mb-0 text-danger">{{ kpis.high_risk_count }}</h3>
+                <small class="text-muted">Breakdown risk &ge; 70%</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-2">
+        <div class="card h-100 border-start border-4 border-warning">
+            <div class="card-body p-3">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-muted small fw-semibold text-uppercase">Due Soon</span>
+                    <span class="p-2 bg-warning bg-opacity-10 text-warning rounded-circle"><i class="bi bi-bell-fill fs-5"></i></span>
+                </div>
+                <h3 class="fw-bold mb-0 text-warning">{{ kpis.services_due }}</h3>
+                <small class="text-muted">Overdue maintenance</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-8">
+        <div class="card h-100">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom">
+                <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-graph-up me-2 text-primary"></i>Monthly Service Expenditure (Labour vs Parts)</h6>
+                <span class="badge bg-light text-secondary border">Descriptive Trend</span>
+            </div>
+            <div class="card-body">
+                <canvas id="monthlyCostChart" style="max-height: 290px;"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom">
+                <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-pie-chart me-2 text-success"></i>Breakdown Risk Distribution</h6>
+                <span class="badge bg-light text-secondary border">ML Inference</span>
+            </div>
+            <div class="card-body d-flex flex-column justify-content-center align-items-center">
+                <div style="width: 220px; height: 220px;">
+                    <canvas id="riskDistChart"></canvas>
+                </div>
+                <div class="d-flex gap-3 mt-3 small">
+                    <span class="d-flex align-items-center gap-1"><span class="badge rounded-circle bg-success p-1"> </span> Low: {{ risk_dist.Low }}</span>
+                    <span class="d-flex align-items-center gap-1"><span class="badge rounded-circle bg-warning p-1"> </span> Med: {{ risk_dist.Medium }}</span>
+                    <span class="d-flex align-items-center gap-1"><span class="badge rounded-circle bg-danger p-1"> </span> High: {{ risk_dist.High }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Urgent Attention & Recent Services Tables -->
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom">
+                <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-shield-exclamation text-danger me-2"></i>Urgent Attention: High Risk & Due Vehicles</h6>
+                <a href="{{ url_for('reports') }}" class="small text-decoration-none">View All</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light small">
+                        <tr>
+                            <th>Registration</th>
+                            <th>Vehicle</th>
+                            <th>Customer</th>
+                            <th>Risk Score</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for v in urgent_vehicles %}
+                        <tr>
+                            <td>
+                                <a href="{{ url_for('vehicle_view', vehicle_id=v.vehicle_id) }}" class="fw-semibold text-decoration-none font-monospace">
+                                    {{ v.registration_no }}
+                                </a>
+                            </td>
+                            <td>{{ v.make }} {{ v.model }} ({{ v.year }})</td>
+                            <td>
+                                <div>{{ v.customer_name }}</div>
+                                <small class="text-muted">{{ v.customer_phone }}</small>
+                            </td>
+                            <td>
+                                {% if v.risk_score %}
+                                    {% if v.risk_level == 'High' %}
+                                        <span class="badge badge-risk-high px-2 py-1"><i class="bi bi-exclamation-triangle-fill me-1"></i>High ({{ (v.risk_score * 100)|round(1) }}%)</span>
+                                    {% elif v.risk_level == 'Medium' %}
+                                        <span class="badge badge-risk-medium px-2 py-1">Med ({{ (v.risk_score * 100)|round(1) }}%)</span>
+                                    {% else %}
+                                        <span class="badge badge-risk-low px-2 py-1">Low ({{ (v.risk_score * 100)|round(1) }}%)</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="badge bg-light text-muted border">Pending</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('service_add') }}?vehicle_id={{ v.vehicle_id }}" class="btn btn-sm btn-outline-primary py-0 px-2" title="Schedule Service">
+                                    <i class="bi bi-calendar-check"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center py-4 text-muted">No high-risk vehicles currently identified. Fleet health optimal!</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom">
+                <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-clock-history text-primary me-2"></i>Recent Service History</h6>
+                <a href="{{ url_for('services_list') }}" class="small text-decoration-none">View All</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light small">
+                        <tr>
+                            <th>Date</th>
+                            <th>Vehicle</th>
+                            <th>Type</th>
+                            <th>Total Cost</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for s in recent_services %}
+                        <tr>
+                            <td class="small">{{ s.service_date }}</td>
+                            <td>
+                                <a href="{{ url_for('service_view', service_id=s.service_id) }}" class="fw-semibold text-decoration-none">
+                                    {{ s.registration_no }}
+                                </a>
+                                <div class="small text-muted">{{ s.make }} {{ s.model }}</div>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border">{{ s.service_type }}</span>
+                            </td>
+                            <td class="fw-bold">${{ "{:,.2f}".format(s.total_cost) }}</td>
+                            <td>
+                                <span class="badge {% if s.status == 'Completed' %}bg-success{% elif s.status == 'Scheduled' %}bg-info{% elif s.status == 'In Progress' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                                    {{ s.status }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center py-4 text-muted">No service records found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // 1. Monthly Cost Trends Bar & Line
+    const monthlyData = {{ monthly_trends|tojson }};
+    const ctxMonthly = document.getElementById('monthlyCostChart').getContext('2d');
+    
+    new Chart(ctxMonthly, {
+        type: 'bar',
+        data: {
+            labels: monthlyData.months,
+            datasets: [
+                {
+                    label: 'Labour Cost ($)',
+                    data: monthlyData.labour,
+                    backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                    borderColor: 'rgb(59, 130, 246)',
+                    borderWidth: 1,
+                    stack: 'Stack 0'
+                },
+                {
+                    label: 'Parts Cost ($)',
+                    data: monthlyData.parts,
+                    backgroundColor: 'rgba(16, 185, 129, 0.7)',
+                    borderColor: 'rgb(16, 185, 129)',
+                    borderWidth: 1,
+                    stack: 'Stack 0'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'top' },
+                tooltip: { mode: 'index', intersect: false }
+            },
+            scales: {
+                x: { grid: { display: false } },
+                y: { beginAtZero: true, title: { display: true, text: 'Expenditure ($)' } }
+            }
+        }
+    });
+
+    // 2. Risk Distribution Doughnut Chart
+    const riskData = {{ risk_dist|tojson }};
+    const ctxRisk = document.getElementById('riskDistChart').getContext('2d');
+    
+    new Chart(ctxRisk, {
+        type: 'doughnut',
+        data: {
+            labels: ['Low Risk', 'Medium Risk', 'High Risk'],
+            datasets: [{
+                data: [riskData.Low, riskData.Medium, riskData.High],
+                backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
+                hoverOffset: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            cutout: '65%'
+        }
+    });
+});
+</script>
+{% endblock %}

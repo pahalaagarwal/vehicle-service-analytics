@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% block title %}Vehicle: {{ vehicle.registration_no }} — AutoCare Analytics{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+    <div class="d-flex align-items-center gap-3">
+        <a href="{{ url_for('vehicles_list') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i> Vehicles
+        </a>
+        <div>
+            <h2 class="h3 fw-bold mb-0 text-dark font-monospace">{{ vehicle.registration_no }}</h2>
+            <span class="text-muted small">{{ vehicle.make }} {{ vehicle.model }} &bull; {{ vehicle.year }} &bull; {{ vehicle.fuel_type }}</span>
+        </div>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('service_add') }}?vehicle_id={{ vehicle.vehicle_id }}" class="btn btn-success btn-sm">
+            <i class="bi bi-tools me-1"></i> Log Service
+        </a>
+        <form method="POST" action="{{ url_for('predict') }}" class="d-inline">
+            <input type="hidden" name="prediction_mode" value="existing_vehicle">
+            <input type="hidden" name="vehicle_id" value="{{ vehicle.vehicle_id }}">
+            <button type="submit" class="btn btn-warning btn-sm text-dark fw-semibold">
+                <i class="bi bi-cpu-fill me-1"></i> Re-assess Risk Now
+            </button>
+        </form>
+        <a href="{{ url_for('vehicle_edit', vehicle_id=vehicle.vehicle_id) }}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-pencil me-1"></i> Edit
+        </a>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Vehicle Summary Card -->
+    <div class="col-lg-4">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-car-front-fill text-primary me-2"></i>Vehicle Telemetry</h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush small">
+                    <li class="list-group-item d-flex justify-content-between px-0">
+                        <span class="text-muted">Registered Owner</span>
+                        <span class="fw-semibold">
+                            <a href="{{ url_for('customer_view', customer_id=vehicle.customer_id) }}" class="text-decoration-none">
+                                {{ vehicle.customer_name }}
+                            </a>
+                        </span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between px-0">
+                        <span class="text-muted">Customer Phone</span>
+                        <span>{{ vehicle.customer_phone }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between px-0">
+                        <span class="text-muted">Manufacturing Year</span>
+                        <span class="fw-semibold">{{ vehicle.year }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between px-0">
+                        <span class="text-muted">Current Odometer</span>
+                        <span class="fw-bold text-dark">{{ "{:,}".format(vehicle.mileage) }} km</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between px-0">
+                        <span class="text-muted">Fuel Type</span>
+                        <span class="badge bg-light text-dark border">{{ vehicle.fuel_type }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between px-0">
+                        <span class="text-muted">Last Service Recorded</span>
+                        <span class="fw-semibold text-secondary">{{ vehicle.last_service_date or 'No record' }}</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Breakdown Risk Prediction Card -->
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-cpu text-warning me-2"></i>Predictive Maintenance & Risk Health</h6>
+                {% if latest_pred %}
+                <span class="text-muted small">Assessed: {{ latest_pred.predicted_at[:16] }}</span>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% if latest_pred %}
+                <div class="row align-items-center g-3 mb-3">
+                    <div class="col-md-5 text-center border-end">
+                        <div class="mb-2">
+                            {% if latest_pred.risk_level == 'High' %}
+                                <span class="badge badge-risk-high fs-5 px-3 py-2"><i class="bi bi-exclamation-triangle-fill me-1"></i>HIGH RISK</span>
+                            {% elif latest_pred.risk_level == 'Medium' %}
+                                <span class="badge badge-risk-medium fs-5 px-3 py-2"><i class="bi bi-exclamation-circle-fill me-1"></i>MEDIUM RISK</span>
+                            {% else %}
+                                <span class="badge badge-risk-low fs-5 px-3 py-2"><i class="bi bi-shield-check me-1"></i>LOW RISK</span>
+                            {% endif %}
+                        </div>
+                        <h2 class="display-6 fw-bold mb-0 {% if latest_pred.risk_level == 'High' %}text-danger{% elif latest_pred.risk_level == 'Medium' %}text-warning{% else %}text-success{% endif %}">
+                            {{ (latest_pred.risk_score * 100)|round(1) }}%
+                        </h2>
+                        <small class="text-muted">Breakdown Probability</small>
+                    </div>
+
+                    <div class="col-md-7">
+                        <div class="mb-2">
+                            <span class="fw-semibold small text-secondary">Maintenance Due Status:</span>
+                            {% if latest_pred.service_due == 1 %}
+                                <span class="badge bg-danger ms-2"><i class="bi bi-clock-history me-1"></i>Overdue / Required</span>
+                            {% else %}
+                                <span class="badge bg-success ms-2"><i class="bi bi-check-circle me-1"></i>On Schedule</span>
+                            {% endif %}
+                        </div>
+                        <div class="small text-muted mb-1">Key Diagnostic Driving Factors:</div>
+                        <div class="p-2 bg-light rounded border small">
+                            <i class="bi bi-info-circle text-primary me-1"></i> {{ latest_pred.key_factors or 'Vehicle running within optimal health thresholds.' }}
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i class="bi bi-robot fs-1 d-block mb-2 text-secondary"></i>
+                    No ML risk prediction on file yet for this vehicle.
+                    <form method="POST" action="{{ url_for('predict') }}" class="mt-3">
+                        <input type="hidden" name="prediction_mode" value="existing_vehicle">
+                        <input type="hidden" name="vehicle_id" value="{{ vehicle.vehicle_id }}">
+                        <button type="submit" class="btn btn-primary btn-sm">Run First Risk Prediction</button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Service History Table -->
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+        <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-tools text-primary me-2"></i>Service & Repair History</h6>
+        <a href="{{ url_for('service_add') }}?vehicle_id={{ vehicle.vehicle_id }}" class="btn btn-sm btn-outline-success">
+            <i class="bi bi-plus-lg me-1"></i> Add Service
+        </a>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light small">
+                <tr>
+                    <th>Service ID</th>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Odometer</th>
+                    <th>Labour Cost</th>
+                    <th>Parts Cost</th>
+                    <th>Total Cost</th>
+                    <th>Status</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in services %}
+                <tr>
+                    <td class="small text-muted">#{{ s.service_id }}</td>
+                    <td class="fw-semibold">{{ s.service_date }}</td>
+                    <td>
+                        <span class="badge {% if s.service_type == 'Routine' %}bg-primary-subtle text-primary border{% elif s.service_type == 'Emergency Breakdown' %}bg-danger-subtle text-danger border{% elif s.service_type == 'Major Repair' %}bg-warning-subtle text-dark border{% else %}bg-light text-dark border{% endif %}">
+                            {{ s.service_type }}
+                        </span>
+                    </td>
+                    <td>{{ "{:,}".format(s.mileage) }} km</td>
+                    <td>${{ "{:,.2f}".format(s.labour_cost) }}</td>
+                    <td>${{ "{:,.2f}".format(s.parts_cost) }}</td>
+                    <td class="fw-bold">${{ "{:,.2f}".format(s.total_cost) }}</td>
+                    <td>
+                        <span class="badge {% if s.status == 'Completed' %}bg-success{% elif s.status == 'Scheduled' %}bg-info{% elif s.status == 'In Progress' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                            {{ s.status }}
+                        </span>
+                    </td>
+                    <td class="text-end">
+                        <a href="{{ url_for('service_view', service_id=s.service_id) }}" class="btn btn-sm btn-outline-secondary" title="View Ticket & Parts">
+                            <i class="bi bi-file-text"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="9" class="text-center py-4 text-muted">No service records registered for this vehicle yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
