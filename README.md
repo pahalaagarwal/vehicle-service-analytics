@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Vehicle Service Analytics & Breakdown Risk Prediction
 
 A production-ready academic web application designed for comprehensive automotive service management, workshop analytics, and machine learning-driven vehicle breakdown risk prediction.
@@ -187,3 +188,7 @@ For instant evaluation and viva demonstration, one-click fill buttons are provid
    - Explain why **F1-Score and Recall** are critical: In vehicle breakdown prediction, a false negative is dangerous because an unflagged vehicle may break down on a highway.
 6. **Live Prediction:** Go to the Risk Prediction screen, select an older vehicle or enter high mileage (>120,000 km) and long service delay (>200 days), and show how the model flags the risk and generates diagnostic explanations.
 7. **Security Measures:** Password hashing using PBKDF2/SHA-256 via Werkzeug, parameterized SQL queries preventing SQL injection, and session validation.
+=======
+# vehicle-service-analytics
+Vehicle Service Analytics and Breakdown Risk Prediction using Machine Learning
+>>>>>>> b0039768fe00a3d3f05ee67391fb9d0489660d72
